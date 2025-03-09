@@ -73,7 +73,7 @@ void bench_end(std::string passage, std::string id, plf::nanotimer& tim )
 template<typename F>
 void benchfn(std::string passage, F&& fn, std::string id = "none", plf::nanotimer& t = env.shared_timer)
 {
-#ifdef DEBUG
+#ifdef BENCH
     t.start();
     fn();
     bench_end(passage, id, t);
