@@ -1,7 +1,7 @@
 ## Visualizador de DLib
 
 ### Dependencias 
-    - dlib, libfmt, portable-file-dialogs, plf-nanotimer
+ - dlib, libfmt, portable-file-dialogs, plf-nanotimer
 ```bash
 mkdir lib/
 cd lib/
@@ -18,7 +18,9 @@ Sim isso tudo pode ser resolvido com FetchContent mas tenho preguiça de aprende
 ```bash
 mkdir build/
 cd build/
+# Para compilar com benchmarks, coloque -DBENCHMARK=True após 'cmake ..'
 cmake ..
-make
-./ui
+# Para acelerar, use make -j[threads] onde [threads] é o numero de threads disponiveis no PC
+# (ALTAMENTE RECOMENDADO, dlib demora bastante para compilar em uma thread só)
+make && ./ui
 ```
