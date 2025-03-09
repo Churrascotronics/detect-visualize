@@ -81,8 +81,8 @@ void benchfn(std::string passage, F&& fn, std::string id = "none", plf::nanotime
     bench_end(passage, id, t);
 }
 
-#define BENCH(pass, exp) do { \
-    bencfn(pass, [&]{exp;});    \
+#define BENCH(pass, exp, ...) do { \
+    benchfn(pass, [&]{exp;}, __VA_ARGS__);    \
 } while(0);
 
 
@@ -102,15 +102,17 @@ void detect(string path_copy)
     plf::nanotimer local_timer;
     array2d<unsigned char> img;
 
-    benchfn("load_image",
-            [&]{load_image(img, path_copy.c_str());}, "none", local_timer);
+    BENCH("load_image",
+        load_image(img, path_copy.c_str()),
+        "none", local_timer
+    );
 
     pyramid_up(img);
 
-    benchfn("detector",
-            [&]{
-                env.hits = env.detector(img);
-            }, "none", local_timer);
+    BENCH("detector",
+        env.hits = env.detector(img),
+        "none", local_timer
+    );
 
     if(env.hits.size() == 0) env.is_empty = true;
     env.state.store(FINISHED);
@@ -126,8 +128,7 @@ int main()
 
     while(!WindowShouldClose())
     {
-        if(IsKeyDown(KEY_ESCAPE)) CloseWindow();
-        else if(IsKeyDown(KEY_E))
+        if(IsKeyDown(KEY_E))
         {
             env.state.store(NOFILE);
             SpawnDialog();
@@ -149,17 +150,16 @@ int main()
 
             switch(env.state.load()) {
                 case NOFILE:
-                    benchfn("drawing 'NOFILE' text to window",
-                        []{
-                            DrawText(
-                                NOFILE_TEXT,
-                                (env.window_width / 2.0) - (MeasureText(NOFILE_TEXT, 20) / 2.0),
-                                env.window_height / 2.0,
-                                20,
-                                LIGHTGRAY
-                            );
-                        },
-                    "render-nofile");
+                    BENCH(
+                        "drawing 'NOFILE' text to window",
+                        DrawText(
+                            NOFILE_TEXT,
+                            (env.window_width / 2.0) - (MeasureText(NOFILE_TEXT, 20) / 2.0),
+                            env.window_height / 2.0,
+                            20,
+                            LIGHTGRAY
+                        ), "render-nofile"
+                    );
                 break;
 
                 case WAIT_DIALOG:
@@ -175,14 +175,14 @@ int main()
                 case FINISHED:
                 case DETECTING:
                 {
-                    benchfn("drawing texture",
-                        [] {
-                            DrawTexture(
+                    BENCH(
+                        "drawing texture",
+                        DrawTexture(
                             env.image,
                             0, 0,
-                            CLITERAL(Color) {255, 255, 255, 255});
-                        },
-                    "texture");
+                            CLITERAL(Color) {255, 255, 255, 255}
+                        ), "texture"
+                    );
 
                     // Prevent catching trash from previous runs
                     if(env.state.load() == FINISHED)
