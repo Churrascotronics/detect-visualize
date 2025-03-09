@@ -21,6 +21,6 @@ cd build/
 # Para compilar com benchmarks, coloque -DBENCHMARK=True após 'cmake ..'
 cmake ..
 # Para acelerar, use make -j[threads] onde [threads] é o numero de threads disponiveis no PC
-# (ALTAMENTE RECOMENDADO, dlib demora bastante para compilar em uma thread só)
+# (ALTAMENTE RECOMENDADO, dlib demora muito para compilar numa thread só)
 make && ./ui
 ```
