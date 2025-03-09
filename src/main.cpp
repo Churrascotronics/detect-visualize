@@ -7,7 +7,8 @@
 #include <portable-file-dialogs.h>
 #include <dlib/image_processing/frontal_face_detector.h>
 #include <dlib/image_io.h>
-#include <fmt/core.h>
+#include <fmt/format.h>
+#include <fmt/color.h>
 
 using namespace std;
 using namespace dlib;
@@ -17,13 +18,9 @@ using namespace fmt;
 #define VERYDARKGRAY CLITERAL(Color){16, 16, 16, 255}
 #define IDLE_TEXT "Opening..."
 
-std::ostream& bold_on(std::ostream& os)  { return os << "\e[1m"; }
-std::ostream& bold_off(std::ostream& os) { return os << "\e[0m"; }
-
 enum AppState
 {
     NOFILE,
-    WAIT_DIALOG,
     DETECTING,
     FINISHED
 };
@@ -36,7 +33,7 @@ struct Environment
     plf::nanotimer shared_timer;
 
     std::vector<rectangle> hits = {};
-    frontal_face_detector detector = get_frontal_face_detector();
+    frontal_face_detector detector = get_frontal_face_detector(); // Rather get this at startup than runtime :3
 
     Texture2D image;
     string fpath;
@@ -66,7 +63,7 @@ void bench_end(std::string passage, std::string id, plf::nanotimer& tim )
     {
         timepass /= 1000;
         timescale = "S";
-        cout << bold_on << format("[!] BENCH: Spent {}{} {}", timepass, timescale, passage) << bold_off << endl;
+        cout << format(emphasis::bold, format("[!] BENCH: Spent {}{} {}\n", timepass, timescale, passage)) << endl;
         return;
     }
 
@@ -76,9 +73,11 @@ void bench_end(std::string passage, std::string id, plf::nanotimer& tim )
 template<typename F>
 void benchfn(std::string passage, F&& fn, std::string id = "none", plf::nanotimer& t = env.shared_timer)
 {
+#ifdef DEBUG
     t.start();
     fn();
     bench_end(passage, id, t);
+#endif
 }
 
 #define BENCH(pass, exp, ...) do { \
@@ -93,8 +92,6 @@ void SpawnDialog()
 
     // Sketchy ass pointer might get dropped
     env.fpath = select[0];
-
-    //TODO: RlImgui with mama lizs chilli oil?
 }
 
 void detect(string path_copy)
@@ -121,7 +118,9 @@ void detect(string path_copy)
 int main()
 {
     env.state.store(NOFILE);
+#ifndef DEBUG
     SetTraceLogLevel(LOG_NONE);
+#endif
 
     InitWindow(env.window_width, env.window_height, "DLib Visualizer");
     env.detfn = detect;
@@ -159,16 +158,6 @@ int main()
                             20,
                             LIGHTGRAY
                         ), "render-nofile"
-                    );
-                break;
-
-                case WAIT_DIALOG:
-                    DrawText(
-                        "Opening...",
-                        (env.window_width / 2.0) - (MeasureText("Opening...", 20) / 2.0),
-                        env.window_height / 2.0,
-                        20,
-                        LIGHTGRAY
                     );
                 break;
 

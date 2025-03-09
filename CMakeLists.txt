@@ -14,5 +14,11 @@ target_include_directories( ui PRIVATE
     lib/
 )
 
+# set(BENCHMARK False)
+if(${BENCHMARK} STREQUAL True)
+    message("!! Building with benchmarking enabled...")
+    target_compile_definitions(ui PRIVATE DEBUG=1)
+endif()
+
 target_link_libraries( ui dlib::dlib fmt raylib)
 
