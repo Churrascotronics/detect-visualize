@@ -33,6 +33,10 @@ Entre parenteses seus valores default.
    - Mensagens acerca do timing do programa
  - `CMAKE_BUILD_TYPE` **\[(Release)|Debug|RelWithDebInfo|MinSizeRel\]**
    - Tipo de build, mais otimizado é Release, mais lento é Debug.
+ - `BUILD` **UI,CL**
+   - Executáveis para buildar, separados por ','. 
+   - UI -> Detecção com frontend para mostrar o resultado.
+   - CL -> Detecção normal, printa para a tela e sai.
 
 #### Addendum:
 Por causa da maldição do cache do cmake, depois de buildar uma vez se você precisar dar build denovo e mudar alguma opção, é necessario ser explicito com o valor. Onde por default DEBUG=False, depois de uma build precisa fazer `cmake .. -DDEBUG=False`

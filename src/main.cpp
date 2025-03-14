@@ -2,13 +2,15 @@
 #include <raylib.h>
 #include <thread>
 #include <string>
-#include <vector>
 #include <plf_nanotimer.h>
 #include <portable-file-dialogs.h>
 #include <dlib/image_processing/frontal_face_detector.h>
 #include <dlib/image_io.h>
 #include <fmt/format.h>
 #include <fmt/color.h>
+
+#include <detect.c>
+using namespace detect;
 
 using namespace std;
 using namespace dlib;
@@ -18,103 +20,6 @@ using namespace fmt;
 #define VERYDARKGRAY CLITERAL(Color){16, 16, 16, 255}
 #define IDLE_TEXT "Opening..."
 
-enum AppState
-{
-    NOFILE,
-    DETECTING,
-    FINISHED
-};
-
-struct Environment
-{
-    bool is_empty = false;
-    std::atomic<AppState> state;
-
-    plf::nanotimer shared_timer;
-
-    std::vector<rectangle> hits = {};
-    frontal_face_detector detector = get_frontal_face_detector(); // Rather get this at startup than runtime :3
-
-    Texture2D image;
-    string fpath;
-    int window_height = 400;
-    int window_width = 600;
-
-    void (*detfn)(string);
-} env;
-
-void bench_end(std::string passage, std::string id, plf::nanotimer& tim )
-{
-    static std::vector<std::string> past = {};
-
-    if(id != "none")
-    {
-        // if ID was already benchmarked
-        // here to prevent recalling this function in repetitive contexts
-        // like rendering images and such
-        if(count(past.begin(), past.end(), id) != 0) return;
-        past.push_back(id);
-    }
-
-    auto timepass = tim.get_elapsed_ms();
-    std::string timescale("ms");
-
-    if(timepass > 1000)
-    {
-        timepass /= 1000;
-        timescale = "S";
-        cout << format(emphasis::bold, format("[!] BENCH: Spent {}{} {}\n", timepass, timescale, passage)) << endl;
-        return;
-    }
-
-    cout << format("BENCH: Spent {}{} {}", timepass, timescale, passage) << endl;
-}
-
-template<typename F>
-void benchfn(std::string passage, F&& fn, std::string id = "none", plf::nanotimer& t = env.shared_timer)
-{
-#ifdef BENCH
-    t.start();
-    fn();
-    bench_end(passage, id, t);
-#endif
-}
-
-#define BENCH(pass, exp, ...) do { \
-    benchfn(pass, [&]{exp;}, __VA_ARGS__);    \
-} while(0);
-
-
-void SpawnDialog()
-{
-    auto select = pfd::open_file("Select an image").result();
-    if(select.empty()) return;
-
-    // Sketchy ass pointer might get dropped
-    env.fpath = select[0];
-}
-
-void detect(string path_copy)
-{
-    plf::nanotimer local_timer;
-    array2d<unsigned char> img;
-
-    BENCH("load_image",
-        load_image(img, path_copy.c_str()),
-        "none", local_timer
-    );
-
-    pyramid_up(img);
-
-    BENCH("detector",
-        env.hits = env.detector(img),
-        "none", local_timer
-    );
-
-    if(env.hits.size() == 0) env.is_empty = true;
-    env.state.store(FINISHED);
-}
-
 int main()
 {
     env.state.store(NOFILE);
@@ -123,7 +28,7 @@ int main()
 #endif
 
     InitWindow(env.window_width, env.window_height, "DLib Visualizer");
-    env.detfn = detect;
+    env.detfn = detect::detect;
 
     while(!WindowShouldClose())
     {
@@ -139,7 +44,7 @@ int main()
 
             env.state.store(DETECTING);
 
-            thread detection_thread(detect, env.fpath);
+            thread detection_thread(env.detfn, env.fpath);
             detection_thread.detach();
         }
 
